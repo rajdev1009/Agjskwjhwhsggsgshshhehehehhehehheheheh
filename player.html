@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstraToonix Stream | Watch Live</title>
+    <style>
+        /* Body Setup */
+        body { 
+    background: #000; 
+    margin: 0; 
+    color: white; 
+    font-family: 'Segoe UI', sans-serif; 
+    display: block; /* 🚀 'flex' हटा दिया ताकि पेज नीचे तक लम्बा हो सके */
+    min-height: 100vh; 
+    overflow-y: auto; /* 🚀 Vertical scroll force kiya */
+    padding-bottom: 50px; 
+        }
+        
+        /* Header */
+        .player-header { padding: 12px 20px; background: #141414; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #222; z-index: 10; flex-shrink: 0; }
+        
+        /* 🚀 NAYA: Back Button White */
+        .back-btn { color: #ffffff; text-decoration: none; font-weight: bold; font-size: 1.1rem; }
+        
+        /* 🚀 NAYA: Radium Scrolling Title */
+        .title-wrapper { flex: 1; overflow: hidden; white-space: nowrap; margin: 0 15px; position: relative; display: flex; align-items: center; }
+        #movieTitle { 
+            display: inline-block; 
+            margin: 0; 
+            font-size: 1.1rem; 
+            color: #39ff14; /* Radium Green Color */
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.8); /* Radium Glow */
+            font-weight: bold;
+            animation: radiumScroll 10s linear infinite; /* Chalte rehne wala animation */
+        }
+        @keyframes radiumScroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-150%); }
+        }
+
+        /* 🚀 NAYA: Green Watching Box with Red Dot */
+        .live-status { background: rgba(0, 255, 0, 0.15); color: #00ff00; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; border: 1px solid #00ff00; font-weight: bold; }
+        .dot { height: 10px; width: 10px; background-color: #ff0000; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; box-shadow: 0 0 8px #ff0000; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* Video Container */
+        .video-container { 
+            flex: none; 
+            background: #000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 15px;
+            position: relative;
+        }
+
+        /* 🚀 NAYA: RGB Cycling Neon Border & Glow for Video */
+        .video-wrapper {
+            width: 100%;
+            max-width: 900px;
+            border: 3px solid #00ff00;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            transition: border-color 0.3s ease;
+            animation: rgbBorderGlow 3s linear infinite;
+        }
+        @keyframes rgbBorderGlow {
+            0%   { border-color: #ff0000; box-shadow: 0 0 35px rgba(255, 0, 0, 0.7), 0 0 60px rgba(255, 0, 0, 0.3); }
+            33%  { border-color: #00ff00; box-shadow: 0 0 35px rgba(0, 255, 0, 0.7), 0 0 60px rgba(0, 255, 0, 0.3); }
+            66%  { border-color: #0044ff; box-shadow: 0 0 35px rgba(0, 68, 255, 0.7), 0 0 60px rgba(0, 68, 255, 0.3); }
+            100% { border-color: #ff0000; box-shadow: 0 0 35px rgba(255, 0, 0, 0.7), 0 0 60px rgba(255, 0, 0, 0.3); }
+        }
+
+        video { width: 100%; display: block; outline: none; }
+
+        /* 🚀 NAYA FEATURE: Quality Buttons CSS */
+        .quality-container { display: flex; justify-content: center; gap: 10px; padding: 12px; background: #0a0a0a; border-bottom: 1px solid #222; flex-wrap: wrap; z-index: 5; }
+        .quality-btn { background: #111; color: #fff; border: 1px solid #39ff14; padding: 8px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.3s ease; font-size: 0.9rem; }
+        .quality-btn.active { background: #39ff14; color: #000; box-shadow: 0 0 10px rgba(57, 255, 20, 0.8); }
+        .quality-btn:hover { background: rgba(57, 255, 20, 0.2); }
+        body.is-fullscreen .quality-container { display: none !important; }
+
+        /* Scrollbar hide for Related Grid */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .hidden { display: none !important; }
+        
+        /* 🚀 NAYA: Modal CSS for Custom Alert */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+
+        #relatedContainer { margin-bottom: 30px; } /* 🚀 Scroll fix gap */
+                /* WhatsApp Group Button */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 40px;
+            right: 20px;
+            background-color: #25d366;
+            color: #FFF;
+            border-radius: 50px;
+            text-align: center;
+            padding: 10px 16px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+            text-decoration: none;
+            z-index: 100;
+            font-size: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: groupBlink 15s infinite; 
+            transition: background-color 0.3s;
+        }
+        
+        .whatsapp-float:hover { background-color: #128C7E; animation: none; transform: scale(1.05); }
+        .whatsapp-icon { width: 22px; height: 22px; fill: white; }
+
+        @keyframes groupBlink {
+            0%, 90% { transform: scale(1); background-color: #25d366; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+            92% { transform: scale(1.1); background-color: #128C7E; box-shadow: 0 0 15px #25d366; }
+            94% { transform: scale(1); background-color: #25d366; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+            96% { transform: scale(1.1); background-color: #128C7E; box-shadow: 0 0 15px #25d366; }
+            98%, 100% { transform: scale(1); background-color: #25d366; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+        }
+
+        /* Fullscreen handling */
+        video:fullscreen { border: none !important; border-radius: 0; }
+        video:-webkit-full-screen { border: none !important; }
+
+        .status-bar { padding: 8px; text-align: center; font-size: 0.75rem; color: #555; background: #0a0a0a; margin-top: auto; }
+
+        /* Photo Slider Container */
+        .photo-slider-container {
+    width: 100%;
+    height: 550px; /* 🚀 इसे पक्का 400px कर दो ताकि पूरा फोटो दिखे */
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    margin: 20px 0;
+        }
+        
+        .slide-img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            background-size: cover;
+            background-position: center;
+            transition: opacity 1s ease-in-out;
+            z-index: 1;
+        }
+        .slide-img.active {
+            opacity: 1;
+            z-index: 2;
+        }
+        /* Slider Animations */
+        .slide-img.anim-zoom.active { animation: zoomAnim 5s linear forwards; }
+        @keyframes zoomAnim { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
+        
+        .slide-img.anim-pan.active { animation: panAnim 5s linear forwards; }
+        @keyframes panAnim { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+
+        /* Fullscreen Hiding Logic */
+        body.is-fullscreen .video-wrapper { border: none !important; box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; }
+        body.is-fullscreen .player-header, 
+        body.is-fullscreen .photo-slider-container, 
+        body.is-fullscreen .whatsapp-float, 
+        body.is-fullscreen .status-bar { display: none !important; }
+        body.is-fullscreen .video-container { padding: 0 !important; }
+        body.is-fullscreen #relatedContainer { display: none !important; }
+
+        /* 🚀 NAYA: Ad Container Style */
+        #astraAdContainer {
+            width: 95%;
+            max-width: 800px;
+            margin: 15px auto;
+            text-align: center;
+            background: #111;
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.2);
+            z-index: 5;
+            position: relative;
+            display: block; /* 🚀 FIX: Ab ad hamesha dikhega (agar user free hai) */
+        }
+        body.is-fullscreen #astraAdContainer { display: none !important; }
+
+        /* 🎮 GAME BUTTON - Fixed Bottom */
+        .game-float-btn {
+            position: fixed;
+            bottom: 40px;
+            left: 20px;
+            background: linear-gradient(135deg, #0f0f0f, #1a1a2e);
+            color: #fff;
+            border-radius: 50px;
+            text-align: center;
+            padding: 10px 18px;
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.5);
+            text-decoration: none;
+            z-index: 100;
+            font-size: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: 2px solid #39ff14;
+            animation: gameBtnGlow 3s linear infinite;
+        }
+        @keyframes gameBtnGlow {
+            0%   { border-color: #ff0000; box-shadow: 0 0 12px rgba(255,0,0,0.7); }
+            33%  { border-color: #39ff14; box-shadow: 0 0 12px rgba(57,255,20,0.7); }
+            66%  { border-color: #0044ff; box-shadow: 0 0 12px rgba(0,68,255,0.7); }
+            100% { border-color: #ff0000; box-shadow: 0 0 12px rgba(255,0,0,0.7); }
+        }
+        .game-float-btn:hover { transform: scale(1.05); }
+        body.is-fullscreen .game-float-btn { display: none !important; }
+
+        /* 🎮 GAME FULLSCREEN OVERLAY */
+        #gameOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            z-index: 99999;
+            flex-direction: column;
+        }
+        #gameOverlay.active {
+            display: flex;
+        }
+        .game-overlay-header {
+            background: #0a0a0a;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #222;
+            flex-shrink: 0;
+            animation: gameBtnGlow 3s linear infinite;
+        }
+        .game-overlay-title {
+            color: #39ff14;
+            font-weight: bold;
+            font-size: 1rem;
+            text-shadow: 0 0 8px rgba(57,255,20,0.8);
+        }
+        .game-overlay-close {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            z-index: 100000;
+        }
+        .game-overlay-close:hover { background: #c0392b; transform: scale(1.05); }
+        #gameFrame {
+            width: 100%;
+            flex: 1;
+            border: none;
+            display: block;
+        }
+
+    </style>
+    
+    <script src="saman.js"></script>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="player-header">
+        <a href="index.html" class="back-btn">⬅ Back</a>
+        
+        <div class="title-wrapper">
+            <h3 id="movieTitle">Loading Stream...</h3>
+        </div>
+        
+        <div class="live-status"><span class="dot"></span> <span id="liveCount">1</span> Watching</div>
+    </div>
+    
+    <div class="video-container">
+        <div class="video-wrapper">
+            <video id="astraPlayer" controls autoplay playsinline webkit-playsinline preload="auto">
+                <source id="videoSource" src="" type="video/mp4">
+                Your browser does not support the video tag. <a id="fallbackLink" href="" style="color: #00ff00;">Click here to download</a>
+            </video>
+        </div>
+    </div>
+
+    <div id="qualityContainer" class="quality-container hidden"></div>
+
+    <div id="relatedContainer" class="hidden" style="padding: 15px; background: #000; z-index: 5;">
+        <h4 style="color: #f1c40f; margin-top: 0; margin-bottom: 12px; border-left: 3px solid #e50914; padding-left: 10px; font-size: 1.1rem; text-transform: uppercase;">Related & Parts</h4>
+        <div id="relatedGrid" style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px;" class="hide-scroll"></div>
+    </div>
+
+    <!-- 🎮 GAME FULLSCREEN OVERLAY -->
+    <div id="gameOverlay">
+        <div class="game-overlay-header">
+            <span class="game-overlay-title">🎮 AstraToonix Game Zone</span>
+            <button class="game-overlay-close" onclick="closeGame()">✕ Close</button>
+        </div>
+        <iframe id="gameFrame" src="" allowfullscreen></iframe>
+    </div>
+
+    <div class="photo-slider-container" id="photoSlider">
+        <div class="slide-img active anim-zoom" style="background-image: url('https://i.ibb.co/xK7G6xRW/Picsart-26-03-01-01-59-58-450.jpg');"></div>
+        <div class="slide-img anim-pan" style="background-image: url('https://i.ibb.co/SD4t61tM/images-1.jpg');"></div>
+        <div class="slide-img anim-zoom" style="background-image: url('https://i.ibb.co/5Wtr9G2t/1772307222502-2.jpg');"></div>
+        <div class="slide-img anim-pan" style="background-image: url('https://i.ibb.co/5xY8cQHL/dhurandhar-review-v0-dftsqp8m488g1.png');"></div>
+    </div>
+
+    <div id="adsterraTargetLocation"></div>
+
+    <!-- 🎮 GAME FLOAT BUTTON -->
+    <div class="game-float-btn" onclick="openGame()">
+        🎮 <span>Game</span>
+    </div>
+
+    <a href="https://chat.whatsapp.com/CO1w23Z2vYF0vksMEcxNXx?mode=gi_t" class="whatsapp-float" target="_blank">
+        <svg class="whatsapp-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+        </svg>
+        <span>Join Our Support Group</span>
+    </a>
+
+    <div id="customAlert" class="modal-overlay hidden">
+        <div style="background:#111; padding:25px; border-radius:15px; text-align:center; width:80%; max-width:320px; border:2px solid #e50914; box-shadow: 0 0 25px rgba(229, 9, 20, 0.5); margin: auto;">
+            <div style="font-size: 3rem; color: #f1c40f; margin-bottom: 15px;"><i class="fas fa-lock"></i></div>
+            <h3 style="color:#e50914; margin-top:0; letter-spacing: 1px;">VIP ACCESS</h3>
+            <p id="alertMessage" style="color:#eee; font-size:0.95rem; line-height:1.5; margin-bottom: 20px;"></p>
+            <button onclick="closeCustomAlert()" style="background:#e50914; color:#fff; border:none; padding:12px 30px; border-radius:8px; font-weight:bold; cursor:pointer; width: 100%;">THIK HAI</button>
+        </div>
+    </div>
+    <div class="status-bar">Powered by AstraToonix Engine</div>
+        <script>
+        const BACKEND_URL = window.location.origin; 
+        const params = new URLSearchParams(window.location.search);
+        const videoTitle = params.get('title');
+        const movieId = params.get('id');
+
+        const link480 = params.get('link480');
+        const link720 = params.get('link720');
+        const link1080 = params.get('link1080');
+        const link4k = params.get('link4k');
+        const oldVideoLink = params.get('link'); 
+
+        const videoElement = document.getElementById('astraPlayer');
+        const sourceElement = document.getElementById('videoSource');
+        const fallbackElement = document.getElementById('fallbackLink');
+
+        let activeLink = link480 || oldVideoLink;
+
+        if(activeLink) { 
+            sourceElement.src = activeLink;
+            fallbackElement.href = activeLink; 
+            videoElement.load(); 
+        }
+if(videoTitle) { document.getElementById('movieTitle').innerText = videoTitle; }
+
+        const qContainer = document.getElementById('qualityContainer');
+        if(link480 || link720 || link1080 || link4k) {
+            qContainer.classList.remove('hidden');
+            let btnsHTML = '';
+            
+            const qualities = [
+                { name: '480p', url: link480 },
+                { name: '720p', url: link720 },
+                { name: '1080p', url: link1080 },
+                { name: '4K', url: link4k }
+            ];
+
+            qualities.forEach(q => {
+                if(q.url) {
+                    let isActive = (q.url === activeLink) ? 'active' : '';
+                    btnsHTML += `<button class="quality-btn ${isActive}" onclick="changeQuality('${q.url}', this)">${q.name}</button>`;
+                }
+            });
+            qContainer.innerHTML = btnsHTML;
+        }
+
+        // 🚀 NAYA LOGIC: VIP Quality Check (480p Free, 720p+ VIP)
+        window.changeQuality = async function(newUrl, btn) {
+            const qName = btn.innerText;
+            
+            // 480p hamesha free rahega
+            if (qName === '480p') {
+                applyQuality(newUrl, btn);
+                return;
+            }
+
+            const user = localStorage.getItem('astratoonix_user');
+            if (!user) {
+                showMyAlert("🔒 High Quality ke liye Login aur VIP Access chahiye!");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/check-access`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user, movieId: "quality_vip_check*" })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    applyQuality(newUrl, btn);
+                } else {
+                    showMyAlert("💎 720p/1080p dekhne ke liye VIP Approval chahiye! Admin se sampark karein.");
+                }
+            } catch (e) {
+                showMyAlert("Verification failed! Server error.");
+            }
+        };
+
+        function applyQuality(newUrl, btn) {
+            const currentTime = videoElement.currentTime;
+            const isPaused = videoElement.paused;
+            
+            sourceElement.src = newUrl;
+            videoElement.load();
+            videoElement.currentTime = currentTime; 
+            if(!isPaused) videoElement.play();
+
+            document.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+                    // 🚀 NAYA LOGIC: Custom Alert function for Player
+        function showMyAlert(msg) {
+            const alertBox = document.getElementById('customAlert');
+            const msgBox = document.getElementById('alertMessage');
+            if (alertBox && msgBox) {
+                msgBox.innerText = msg;
+                alertBox.classList.remove('hidden');
+            } else {
+                alert(msg);
+            }
+        }
+
+        function closeCustomAlert() {
+            const alertBox = document.getElementById('customAlert');
+            if (alertBox) alertBox.classList.add('hidden');
+        }
+
+        // 🚀 NAYA LOGIC: Sidebar VIP Security Check
+        async function handleSidebarClick(clickId, targetUrl) {
+            const isPremiumContent = String(clickId).includes('*');
+            
+            // Agar free hai to turant play karo
+            if (!isPremiumContent) {
+                window.location.href = targetUrl;
+                return;
+            }
+
+            const currentUser = localStorage.getItem('astratoonix_user');
+            if (!currentUser) {
+                showMyAlert("🔒 Yeh Premium Content hai! Isko dekhne ke liye login karein.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/check-access`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentUser, movieId: clickId })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    window.location.href = targetUrl; // Access granted
+                } else {
+                    if (data.message === "Blocked by Admin") {
+                        showMyAlert("🚫 Sorry Bhai! Aapko Admin ne AstraToonix se Block kar diya hai.");
+                    } else {
+                        showMyAlert("🔒 Yeh Premium Content hai! Isko dekhne ke liye Premium Plan chahiye.");
+                    }
+                }
+            } catch(e) {
+                showMyAlert("Verification failed! Server error.");
+            }
+        }
+
+        // Auto-Recommend Logic
+        if (typeof moviesData !== 'undefined' && movieId) {
+            const relatedContainer = document.getElementById('relatedContainer');
+            const relatedGrid = document.getElementById('relatedGrid');
+            const baseIdStr = String(movieId).replace('*', '').split('_')[0]; 
+            const baseMovie = moviesData.find(m => String(m.id) === baseIdStr);
+            
+            let relatedList = [];
+
+            if (baseMovie) {
+                // Agar Series hai
+                if (baseMovie.parts && baseMovie.parts.length > 0) {
+                    baseMovie.parts.forEach((p, idx) => {
+                        // 🚀 NAYA: Agar part title me '*' hai, to use LOCK ID do
+                        let isPartPremium = p.title.includes('*');
+                        let pId = isPartPremium ? `${baseMovie.id}_part${idx}*` : `${baseMovie.id}_part${idx}`;
+                        
+                        if (pId.replace('*', '') !== String(movieId).replace('*', '')) { 
+                            relatedList.push({ name: p.title, img: p.img || baseMovie.img, id: pId, link: p.link, links: p.links, isPremium: isPartPremium });
+                        }
+                    });
+                } else {
+                    // Agar Normal Movie hai
+                    const firstWord = baseMovie.name.split(' ')[0].toLowerCase();
+                    moviesData.forEach(m => {
+                        if (m.name.toLowerCase().includes(firstWord) && String(m.id) !== baseIdStr) {
+                            // Main movie premium check
+                            let isMoviePremium = String(m.id).includes('*');
+                            relatedList.push({ name: m.name, img: m.img, id: m.id, link: m.link, links: m.links, isPremium: isMoviePremium });
+                        }
+                    });
+                }
+            }
+
+            if (relatedList.length > 0) {
+                relatedContainer.classList.remove('hidden');
+                let relHTML = '';
+                relatedList.forEach(rm => {
+                    let rUrl = `player.html?title=${encodeURIComponent(rm.name)}&id=${encodeURIComponent(rm.id)}`;
+                    if(rm.link && rm.link !== "#") rUrl += `&link=${encodeURIComponent(rm.link)}`;
+                    if(rm.links) {
+                        if(rm.links.p480) rUrl += `&link480=${encodeURIComponent(rm.links.p480)}`;
+                        if(rm.links.p720) rUrl += `&link720=${encodeURIComponent(rm.links.p720)}`;
+                        if(rm.links.p1080) rUrl += `&link1080=${encodeURIComponent(rm.links.p1080)}`;
+                        if(rm.links.p4k) rUrl += `&link4k=${encodeURIComponent(rm.links.p4k)}`;
+                    }
+                    
+                    // 🚀 NAYA: Yahan 'onclick' ko badal kar 'handleSidebarClick' laga diya hai aur VIP badge add kiya hai
+                    relHTML += `
+                    <div onclick="handleSidebarClick('${rm.id}', '${rUrl}')" style="min-width: 130px; max-width: 130px; background: #111; border-radius: 8px; overflow: hidden; cursor: pointer; border: 1px solid #333; position:relative;">
+                        ${rm.isPremium ? '<div style="position:absolute; top:5px; right:5px; background:rgba(229,9,20,0.9); color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; z-index:10;"><i class="fas fa-lock"></i> VIP</div>' : ''}
+                        <img src="${rm.img}" style="width: 100%; height: 160px; object-fit: cover; border-bottom: 2px solid #e50914;">
+                        <div style="padding: 8px 4px; font-size: 0.85rem; font-weight: bold; text-align: center; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${rm.name.replace('*', '')}</div>
+                    </div>`;
+                });
+                relatedGrid.innerHTML = relHTML;
+            }
+        }
+
+        // 🎮 GAME FUNCTIONS - Fullscreen Overlay + Video Pause/Resume
+        function openGame() {
+            const overlay = document.getElementById('gameOverlay');
+            const gameFrame = document.getElementById('gameFrame');
+            const video = document.getElementById('astraPlayer');
+            
+            // Video pause karo
+            if (video && !video.paused) {
+                video.pause();
+                video.dataset.wasPlaying = 'true';
+            } else {
+                video.dataset.wasPlaying = 'false';
+            }
+            
+            // Game load karo aur overlay dikhao
+            gameFrame.src = 'https://rajdev1009.github.io/Game/';
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeGame() {
+            const overlay = document.getElementById('gameOverlay');
+            const gameFrame = document.getElementById('gameFrame');
+            const video = document.getElementById('astraPlayer');
+            
+            // Game band karo
+            overlay.classList.remove('active');
+            gameFrame.src = '';
+            document.body.style.overflow = '';
+            
+            // Agar video pehle chal raha tha to resume karo
+            if (video && video.dataset.wasPlaying === 'true') {
+                video.play();
+            }
+        }
+
+        const socket = io(BACKEND_URL); 
+        socket.on('connect', () => { if(movieId) { socket.emit('joinMovie', movieId); } });
+        socket.on('globalCounts', (counts) => {
+            if(movieId && counts[movieId]) { document.getElementById('liveCount').innerText = counts[movieId]; }
+        });
+
+        const slides = document.querySelectorAll('.slide-img');
+        let currentSlideIndex = 0;
+        if(slides.length > 0) {
+            setInterval(() => {
+                slides[currentSlideIndex].classList.remove('active');
+                currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+                slides[currentSlideIndex].classList.add('active');
+            }, 5000);
+        }
+
+        function handleFullscreenChange() {
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+                document.body.classList.add('is-fullscreen');
+            } else {
+                document.body.classList.remove('is-fullscreen');
+            }
+        }
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    </script>
+
+    <div id="astraDisclaimerBox" style="width: 96%; background: #080808; border: 1px solid #222; border-top: 3px solid #e50914; padding: 20px; margin: 40px auto 20px auto; text-align: center; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <h4 style="color: #e50914; font-size: 1rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1.5px;">
+                <i class="fas fa-shield-alt"></i> LEGAL DISCLAIMER
+            </h4>
+            <p style="color: #999; font-size: 0.8rem; line-height: 1.5; font-family: sans-serif; text-align: justify; margin: 0;">
+                This website "AstraToonix" does not store any files on its server. All contents are provided by non-affiliated third parties. 
+                We are only crawling and indexing the links which are already publicly available on various online platforms. 
+                Many other websites are already leaching and sharing these movies across the internet; we are simply providing a medium 
+                to access them in one place. All video files and streaming servers belong to their respective owners. 
+                We do not take any responsibility for the content hosted on third-party servers.
+            </p>
+        </div>
+    </div>
+<script src="ads_manager.js"></script>
+</body>
+</html>

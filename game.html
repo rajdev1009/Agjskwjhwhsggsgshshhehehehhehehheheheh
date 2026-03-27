@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AstraToonix — Game</title>
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#000; color:#fff; font-family:'Segoe UI',sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+        #gameHeader { display:flex; align-items:center; justify-content:space-between; padding:10px 15px; background:#0a0a0a; border-bottom:1px solid #1a1a1a; flex-shrink:0; }
+        #gameTitle  { font-size:1rem; font-weight:bold; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%; }
+        #gameFrame  { width:100%; flex:1; border:none; display:none; }
+        #gameLoading { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; }
+        #gameError  { flex:1; display:none; flex-direction:column; align-items:center; justify-content:center; gap:15px; text-align:center; padding:30px; }
+        .back-btn   { background:#1a1a1a; border:1px solid #333; color:#aaa; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px; text-decoration:none; }
+        .fs-btn     { background:#3d3d7a; border:none; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:0.85rem; }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+        @keyframes spin   { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+    </style>
+</head>
+<body>
+
+<div id="gameHeader">
+    <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i> Back</button>
+    <span id="gameTitle">🎮 Loading...</span>
+    <button class="fs-btn" onclick="toggleFS()"><i class="fas fa-expand"></i></button>
+</div>
+
+<!-- Loading screen -->
+<div id="gameLoading">
+    <i class="fas fa-gamepad" style="font-size:3rem;color:#3d3d7a;animation:pulse 1.5s infinite;"></i>
+    <div style="color:#888;font-size:0.9rem;">Game load ho raha hai...</div>
+    <div style="width:200px;height:4px;background:#111;border-radius:4px;overflow:hidden;">
+        <div id="loadBar" style="height:100%;background:#3d3d7a;width:0%;transition:width 0.4s;border-radius:4px;"></div>
+    </div>
+</div>
+
+<!-- Error screen -->
+<div id="gameError">
+    <i class="fas fa-exclamation-triangle" style="font-size:3rem;color:#e50914;"></i>
+    <div style="color:#e50914;font-size:1.1rem;font-weight:bold;">Game load nahi hua!</div>
+    <div id="errorMsg" style="color:#888;font-size:0.85rem;margin-top:5px;"></div>
+    <button class="back-btn" onclick="goBack()" style="margin-top:15px;"><i class="fas fa-arrow-left"></i> Wapas jao</button>
+</div>
+
+<!-- Game iframe -->
+<iframe id="gameFrame"
+    allowfullscreen
+    allow="fullscreen; autoplay; encrypted-media; gamepad"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock">
+</iframe>
+
+<script>
+    var BACKEND_URL = window.location.origin;
+    var params      = new URLSearchParams(window.location.search);
+    var gameId      = params.get('id')    || '';
+    var gameTitle   = decodeURIComponent(params.get('title') || 'Game');
+    var currentUser = localStorage.getItem('astratoonix_user');
+
+    document.getElementById('gameTitle').textContent = '🎮 ' + gameTitle;
+    document.title = gameTitle + ' — AstraToonix';
+
+    // Loading bar animate
+    var loadW = 0;
+    var loadTimer = setInterval(function(){
+        loadW += Math.random() * 12;
+        if (loadW > 80) loadW = 80;
+        document.getElementById('loadBar').style.width = loadW + '%';
+    }, 300);
+
+    function showError(msg) {
+        clearInterval(loadTimer);
+        document.getElementById('gameLoading').style.display = 'none';
+        var err = document.getElementById('gameError');
+        err.style.display = 'flex';
+        document.getElementById('errorMsg').textContent = msg || '';
+    }
+
+    function launchGame(link) {
+        clearInterval(loadTimer);
+        document.getElementById('loadBar').style.width = '100%';
+        setTimeout(function(){
+            document.getElementById('gameLoading').style.display = 'none';
+            var frame = document.getElementById('gameFrame');
+            frame.src = link;
+            frame.style.display = 'block';
+        }, 400);
+    }
+
+    async function loadGame() {
+        // Login check
+        if (!currentUser) {
+            window.location.href = '/';
+            return;
+        }
+        if (!gameId) { showError('Game ID missing!'); return; }
+
+        try {
+            // Same check-access API jo movie mein use hota hai
+            var res  = await fetch(BACKEND_URL + '/api/check-access', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify({ email: currentUser, movieId: gameId })
+            });
+            var data = await res.json();
+
+            if (!data.success) {
+                if (data.message === 'Blocked by Admin') {
+                    showError('🚫 Aapko Admin ne block kiya hai!');
+                } else {
+                    showError('🔒 Yeh VIP Game hai! Premium plan lo.');
+                }
+                return;
+            }
+
+            // Access OK — ab server se real link lo
+            var res2  = await fetch(BACKEND_URL + '/api/game-link', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify({ email: currentUser, gameId: gameId })
+            });
+            var data2 = await res2.json();
+
+            if (data2.success && data2.link) {
+                launchGame(data2.link);
+            } else {
+                showError(data2.message || 'Game link nahi mila');
+            }
+
+        } catch(e) {
+            showError('Server se connect nahi ho paya.');
+        }
+    }
+
+    function goBack() {
+        if (window.history.length > 1) window.history.back();
+        else window.location.href = '/';
+    }
+
+    function toggleFS() {
+        var frame = document.getElementById('gameFrame');
+        if (!document.fullscreenElement) {
+            var el = frame.requestFullscreen || frame.webkitRequestFullscreen || frame.mozRequestFullScreen;
+            if (el) el.call(frame);
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+        }
+    }
+
+    loadGame();
+</script>
+</body>
+</html>
