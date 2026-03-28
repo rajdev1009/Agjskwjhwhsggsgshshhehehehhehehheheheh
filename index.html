@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AstraToonix - Rajdev</title>
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        body { background: #000; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; user-select: none; padding-bottom: 80px; }
+        .hidden { display: none !important; }
+        #heroSlider { width: 100%; height: 55vh; position: relative; background-size: cover; background-position: center top; transition: opacity 0.4s ease; cursor: pointer; }
+        #heroTitle { transition: opacity 0.4s ease; }
+        .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 20px; background: linear-gradient(transparent, rgba(0,0,0,0.9), #000); box-sizing: border-box; }
+        .trending-card { min-width: 130px; position: relative; cursor: pointer; border-radius: 8px; overflow: hidden; }
+        .trending-card img { width: 100%; height: 190px; object-fit: cover; }
+        .movie-card { position: relative; cursor: pointer; border-radius: 8px; overflow: hidden; }
+        .movie-card img { width: 100%; height: 160px; object-fit: cover; }
+        .tag-overlay { position: absolute; top: 5px; left: 5px; background: rgba(229, 9, 20, 0.9); color: white; padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; font-weight: bold; }
+        .floating-profile { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; border-radius: 50%; border: 3px solid #e50914; object-fit: cover; box-shadow: 0 4px 15px rgba(0,0,0,0.8); z-index: 90; cursor: pointer; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .admin-input { width: 100%; padding: 12px; margin-bottom: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; box-sizing: border-box; outline: none; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .plan-card { transition: all 0.2s ease; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        /* Tab buttons */
+        .admin-tab { flex: 1; padding: 10px 4px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+        .admin-tab.active { background: #e50914; color: #fff; }
+        .admin-tab.inactive { background: #1a1a1a; color: #666; }
+        .tab-section { display: none; }
+        .tab-section.active { display: block; }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     LOGIN MODAL
+═══════════════════════════════════════════════ -->
+<div id="loginModal" class="modal-overlay">
+    <div style="background:#111; padding:30px; border-radius:15px; text-align:center; width:85%; max-width:400px; border:1px solid #333;">
+        <img src="https://iili.io/qqO6Zvt.md.jpg" style="width:80px; height:80px; border-radius:50%; border:2px solid #e50914; margin-bottom:15px; object-fit:cover;">
+        <h2 style="color:#e50914; margin-bottom:15px;">AstraToonix Login</h2>
+        <input type="email" id="emailInput" class="admin-input" placeholder="Enter Gmail">
+        <input type="password" id="passInput" class="admin-input" placeholder="Enter NEW Password">
+        <p style="color:#ff9800; font-size:0.75rem; margin: -5px 0 20px; line-height: 1.4; text-align: left; background: rgba(255,152,0,0.1); padding: 10px; border-radius: 5px; border-left: 3px solid #ff9800;">
+            <i class="fas fa-exclamation-triangle"></i> <b>Yad Rakhein:</b> Aap jo abhi password set kar rahe ho yah hamesha yad rakhna, is password ke bina tum dobara login nahin kar paoge.
+        </p>
+        <!-- Bot Check -->
+        <div style="background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+            <div style="color:#888;font-size:0.7rem;letter-spacing:1px;margin-bottom:10px;text-align:center;">🤖 BOT CHECK</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+                <span id="cpQ" style="color:#f1c40f;font-size:1.25rem;font-weight:bold;letter-spacing:2px;">_ + _ = ?</span>
+                <input type="text" id="cpAns" autocomplete="off"
+                    style="width:100px;padding:9px 10px;background:#111;border:2px solid #444;color:#fff;border-radius:8px;font-size:1rem;font-weight:bold;text-align:center;outline:none;"
+                    placeholder="7*@f"
+                    oninput="cpCheck(this.value)">
+                <span id="cpSt" style="font-size:1.4rem;">❓</span>
+            </div>
+            <div style="color:#aaa;font-size:0.72rem;text-align:center;margin-top:8px;">
+                Jaise <span style="color:#f1c40f;font-weight:bold;">4 + 3 = ?</span> &nbsp;→&nbsp; <span style="color:#2ecc71;font-weight:bold;">7*@f</span> likhna hai
+            </div>
+        </div>
+        <button onclick="loginUser()" style="background:#e50914; color:#fff; border:none; padding:14px; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;">Start Watching</button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════════ -->
+<div id="main-app" style="display:none;">
+    <header style="position:fixed; top:0; width:100%; z-index:100; padding:15px; background:linear-gradient(rgba(0,0,0,0.8), transparent); display:flex; justify-content:space-between; align-items:center; box-sizing:border-box;">
+        <div class="logo" onclick="handleAdminClick()" style="font-size:1.5rem; font-weight:bold; color:#e50914; cursor:pointer;">ASTRA<span style="color:#fff;">TOONIX</span></div>
+        <div style="display:flex; gap:18px; font-size:1.3rem;">
+            <i class="fas fa-crown" style="color:#f1c40f; cursor:pointer;" onclick="openUpgradeModal()"></i>
+            <i class="fab fa-whatsapp" style="color:#25D366; cursor:pointer;" onclick="window.open('https://chat.whatsapp.com/CO1w23Z2vYF0vksMEcxNXx?mode=gi_t', '_blank')"></i>
+            <i class="fas fa-search" style="color:#fff; cursor:pointer;" onclick="toggleSearch()"></i>
+        </div>
+    </header>
+
+    <div id="liveStatusContainer" style="margin-top: 65px; background: rgba(229, 9, 20, 0.1); padding: 8px 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #222;">
+        <span style="width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; box-shadow: 0 0 10px #2ecc71; animation: blink 1.5s infinite;"></span>
+        <small style="color: #eee; font-weight: bold; font-size: 0.8rem;">
+            <span id="totalLiveCount" style="color:#e50914;">1</span> People Exploring AstraToonix Live powered by Raj dev
+        </small>
+    </div>
+
+    <div id="searchBar" class="hidden" style="position:fixed; top:60px; width:100%; padding:10px; z-index:99; background:#111; box-sizing:border-box;">
+        <input type="text" id="searchInput" placeholder="Search for movies..." class="admin-input" style="margin:0;">
+    </div>
+
+    <div id="heroSlider" onclick="if(window.heroClick) window.heroClick()">
+        <div class="hero-overlay">
+            <h1 id="heroTitle" style="margin:0; font-size:2rem; font-weight:900;">Loading...</h1>
+            <p style="margin:5px 0 0; color:#aaa; font-size:0.9rem; font-weight:bold;">Tap to Play</p>
+        </div>
+    </div>
+
+    <!-- Trending -->
+    <div style="padding:15px; margin-top:10px;">
+        <h3 style="border-left:3px solid #e50914; padding-left:10px; margin-bottom:15px; font-size:1.1rem; text-transform:uppercase;">Trending Top 10</h3>
+        <div id="trendingGrid" class="hide-scroll" style="display:flex; gap:12px; overflow-x:auto; padding-bottom:10px;"></div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div id="filterTabs" style="display:flex; gap:8px; padding:0 15px 12px; overflow-x:auto;" class="hide-scroll">
+        <button id="filter-all"    onclick="switchFilter('all')"    style="flex-shrink:0;padding:8px 18px;border-radius:20px;border:1px solid #e50914;background:#e50914;color:#fff;font-weight:bold;font-size:0.82rem;cursor:pointer;">All</button>
+        <button id="filter-movies" onclick="switchFilter('movies')" style="flex-shrink:0;padding:8px 18px;border-radius:20px;border:1px solid #333;background:#1a1a1a;color:#888;font-weight:bold;font-size:0.82rem;cursor:pointer;">Movies</button>
+        <button id="filter-series" onclick="switchFilter('series')" style="flex-shrink:0;padding:8px 18px;border-radius:20px;border:1px solid #333;background:#1a1a1a;color:#888;font-weight:bold;font-size:0.82rem;cursor:pointer;">Series</button>
+        <button id="filter-games"  onclick="switchFilter('games')"  style="flex-shrink:0;padding:8px 18px;border-radius:20px;border:1px solid #333;background:#1a1a1a;color:#888;font-weight:bold;font-size:0.82rem;cursor:pointer;">🎮 Games</button>
+    </div>
+
+    <!-- ALL section -->
+    <div id="section-all" style="padding:0 15px 30px; display:block;">
+        <h3 style="border-left:3px solid #e50914;padding-left:10px;margin-bottom:15px;font-size:1.1rem;text-transform:uppercase;">All Content</h3>
+        <div id="allGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;"></div>
+    </div>
+
+    <!-- MOVIES section -->
+    <div id="section-movies" style="padding:0 15px 30px; display:none;">
+        <h3 style="border-left:3px solid #e50914;padding-left:10px;margin-bottom:15px;font-size:1.1rem;text-transform:uppercase;">Movies</h3>
+        <div id="moviesGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;"></div>
+    </div>
+
+    <!-- SERIES section -->
+    <div id="section-series" style="padding:0 15px 30px; display:none;">
+        <h3 style="border-left:3px solid #9b59b6;padding-left:10px;margin-bottom:15px;font-size:1.1rem;text-transform:uppercase;">Series</h3>
+        <div id="seriesGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;"></div>
+    </div>
+
+    <!-- GAMES section -->
+    <div id="section-games" style="padding:0 15px 30px; display:none;">
+        <h3 style="border-left:3px solid #3d3d7a;padding-left:10px;margin-bottom:15px;font-size:1.1rem;text-transform:uppercase;">🎮 Games</h3>
+        <div id="gamesGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;"></div>
+    </div>
+
+    <img src="https://iili.io/qq6G2Dv.md.jpg" class="floating-profile" onclick="openProfilePage()">
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     DEV / PROFILE MODAL
+═══════════════════════════════════════════════ -->
+<div id="devModal" class="modal-overlay hidden">
+    <div style="background:#111; padding:30px; border-radius:15px; text-align:center; width:85%; max-width:350px; border:1px solid #333;">
+        <img src="https://iili.io/qqO6Zvt.md.jpg" style="width:100px; height:100px; border-radius:50%; border:3px solid #e50914; margin-bottom:15px;">
+        <h2 style="margin:5px 0;">Rajdev</h2>
+        <div id="userDisplayInfo" style="color:#aaa; margin-bottom:20px; font-size:0.85rem;"></div>
+        <button onclick="window.open('https://chat.whatsapp.com/CO1w23Z2vYF0vksMEcxNXx?mode=gi_t', '_blank')" style="background:#25D366; color:#fff; border:none; padding:12px; width:100%; border-radius:8px; font-weight:bold; margin-bottom:12px; cursor:pointer;"><i class="fab fa-whatsapp"></i> WhatsApp Group</button>
+        <button onclick="signOutUser()" style="background:#e50914; color:#fff; border:none; padding:12px; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+        <div onclick="document.getElementById('devModal').classList.add('hidden')" style="margin-top:20px; color:#aaa; cursor:pointer;">Close</div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     UPGRADE / PREMIUM MODAL
+═══════════════════════════════════════════════ -->
+<div id="upgradeModal" class="modal-overlay hidden">
+    <div style="background:#111; padding:25px; border-radius:15px; width:90%; max-width:400px; max-height:90vh; overflow-y:auto; border:1px solid #333;">
+        <h3 style="text-align:center; margin-bottom:20px; color:#f1c40f;"><i class="fas fa-crown"></i> Premium Access</h3>
+        <div id="vipTimerBox" style="background: rgba(229, 9, 20, 0.1); border: 1px dashed #e50914; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; display: none;">
+            <h4 style="color: #f1c40f; margin: 0; text-transform: uppercase;">💎 VIP Active</h4>
+            <div id="countdownTimer" style="font-size: 1.4rem; color: #39ff14; font-weight: bold; margin-top: 10px; text-shadow: 0 0 5px #000;">Checking Validity...</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+            <div class="plan-card" onclick="selectPlan('15 Days', '25', this)" style="border:1px solid #e50914; background:#1a1a1a; padding:15px; border-radius:10px; display:flex; justify-content:space-between; cursor:pointer;">
+                <span>15 Days</span><span style="color:#2ecc71; font-weight:bold;">₹25</span>
+            </div>
+            <div class="plan-card" onclick="selectPlan('30 Days', '50', this)" style="border:1px solid #e50914; background:#1a1a1a; padding:15px; border-radius:10px; display:flex; justify-content:space-between; cursor:pointer;">
+                <span>30 Days</span><span style="color:#2ecc71; font-weight:bold;">₹50</span>
+            </div>
+            <div class="plan-card" onclick="selectPlan('50 Days', '60', this)" style="border:1px solid #e50914; background:#1a1a1a; padding:15px; border-radius:10px; display:flex; justify-content:space-between; cursor:pointer;">
+                <span>50 Days</span><span style="color:#2ecc71; font-weight:bold;">₹60</span>
+            </div>
+        </div>
+        <div style="text-align:center; background:#222; padding:20px; border-radius:12px;">
+            <p style="margin-top:0; font-weight:bold;">Scan & Pay via GPay</p>
+            <img src="https://i.ibb.co/0Rf6FpKC/Screenshot-20260226-232841-GPay.png" style="width:100%; max-width:180px; border-radius:10px; margin:10px 0; border:2px solid #333;">
+            <button onclick="sendWhatsAppRequest()" style="background:#25D366; color:#fff; border:none; padding:14px; width:100%; border-radius:8px; font-weight:bold; cursor:pointer; margin-top:10px;">
+                <i class="fab fa-whatsapp"></i> Send payment Screenshot to Rajdev
+            </button>
+            <div onclick="document.getElementById('upgradeModal').classList.add('hidden')" style="margin-top:15px; color:#aaa; cursor:pointer;">Cancel</div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     DISCLAIMER MODAL
+═══════════════════════════════════════════════ -->
+<div id="adminModal" class="modal-overlay hidden">
+    <div style="background:#111; padding:28px; border-radius:15px; width:88%; max-width:400px; border:2px solid #e50914; box-shadow:0 0 30px rgba(229,9,20,0.4); text-align:center;">
+        <div style="font-size:3rem; margin-bottom:12px;">⚠️</div>
+        <h2 style="color:#e50914; margin:0 0 16px; font-size:1.3rem; letter-spacing:1px;">DISCLAIMER</h2>
+        <div style="background:#0a0a0a; border:1px solid #333; border-radius:10px; padding:16px; text-align:left; margin-bottom:20px;">
+            <p style="color:#eee; font-size:0.85rem; line-height:1.7; margin:0;">
+                <span style="color:#f1c40f; font-weight:bold;">AstraToonix</span> koi bhi movie, series ya content 
+                <span style="color:#e50914; font-weight:bold;">apne server par store nahi karta.</span><br><br>
+                Yahan sirf woh links dikhaye jaate hain jo 
+                <span style="color:#2ecc71; font-weight:bold;">internet par already publicly available hain.</span> 
+                Hum sirf unhe ek jagah collect karke dikhate hain — bilkul jaise Google search karta hai.<br><br>
+                Agar koi link galat hai ya copyright issue hai to directly us original source se contact karo. 
+                <span style="color:#aaa;">Is platform ka us content se koi seedha sambandh nahi hai.</span>
+            </p>
+        </div>
+        <p style="color:#555; font-size:0.72rem; margin-bottom:20px; line-height:1.5;">
+            By using AstraToonix, you agree that this platform is not responsible for any third-party content shown here.
+        </p>
+        <button onclick="document.getElementById('adminModal').classList.add('hidden')" 
+            style="background:#e50914; color:#fff; border:none; padding:13px; width:100%; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">
+            SAMAJH GAYA — BAND KARO
+        </button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PARTS MODAL (movie series)
+═══════════════════════════════════════════════ -->
+<div id="partsModal" class="modal-overlay hidden">
+    <div style="background:#111; padding:20px; border-radius:15px; width:90%; max-width:450px; border:1px solid #333;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 id="partsTitle" style="margin:0; font-size:1.2rem;">Select Part</h3>
+            <i class="fas fa-times" onclick="document.getElementById('partsModal').classList.add('hidden')" style="cursor:pointer; font-size:1.2rem;"></i>
+        </div>
+        <div id="partsGrid" style="display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     LOADING SCREEN
+═══════════════════════════════════════════════ -->
+<div id="loadingScreen" class="modal-overlay hidden">
+    <div style="text-align:center; width:80%;">
+        <h2 style="margin-bottom:20px; font-size:1.1rem; color:#e50914;">Checking Stream Integrity...</h2>
+        <div style="width:100%; background:#222; height:6px; border-radius:10px; overflow:hidden;">
+            <div id="progressBar" style="width:0%; background:#e50914; height:100%; transition: width 0.1s;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CUSTOM ALERT
+═══════════════════════════════════════════════ -->
+<div id="customAlert" class="modal-overlay hidden">
+    <div style="background:#111; padding:25px; border-radius:15px; text-align:center; width:80%; max-width:320px; border:2px solid #e50914; box-shadow: 0 0 25px rgba(229, 9, 20, 0.5); margin: auto;">
+        <div style="font-size: 3rem; color: #f1c40f; margin-bottom: 15px;"><i class="fas fa-lock"></i></div>
+        <h3 style="color:#e50914; margin-top:0; letter-spacing: 1px;">VIP ACCESS</h3>
+        <p id="alertMessage" style="color:#eee; font-size:0.95rem; line-height:1.5; margin-bottom: 20px;"></p>
+        <button onclick="closeCustomAlert()" style="background:#e50914; color:#fff; border:none; padding:12px 30px; border-radius:8px; font-weight:bold; cursor:pointer; width: 100%;">THIK HAI</button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════ -->
+<script src="auth.js"></script>
+<script src="script.js"></script>
+<script src="ads_manager.js"></script>
+
+
+</body>
