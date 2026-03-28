@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AstraToonix</title>
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .input-field { width: 100%; padding: 12px; margin-bottom: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; outline: none; font-size: 1rem; box-sizing: border-box; }
+        .btn-main { background: #e50914; color: #fff; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+    </style>
+</head>
+<body>
+<div style="background:#111;padding:30px;border-radius:15px;text-align:center;width:85%;max-width:400px;border:1px solid #333;">
+    <img src="https://iili.io/qqO6Zvt.md.jpg" style="width:80px;height:80px;border-radius:50%;border:2px solid #e50914;margin-bottom:15px;object-fit:cover;">
+    <h2 style="color:#e50914;margin-bottom:15px;">AstraToonix Login</h2>
+    <input type="email" id="emailInput" class="input-field" placeholder="Enter Gmail">
+    <input type="password" id="passInput" class="input-field" placeholder="Enter Password">
+    <p style="color:#ff9800;font-size:0.75rem;margin:-4px 0 16px;line-height:1.5;text-align:left;background:rgba(255,152,0,0.08);padding:10px;border-radius:5px;border-left:3px solid #ff9800;">
+        <i class="fas fa-exclamation-triangle"></i> <b>Yad Rakhein:</b> Jo password set karo wahi hamesha yaad rakho.
+    </p>
+    <div style="background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:14px;margin-bottom:14px;">
+        <div style="color:#888;font-size:0.7rem;letter-spacing:1px;margin-bottom:10px;text-align:center;">BOT CHECK</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+            <span id="cpQ" style="color:#f1c40f;font-size:1.25rem;font-weight:bold;">_ + _ = ?</span>
+            <input type="text" id="cpAns" class="input-field" style="width:100px;margin:0;text-align:center;" autocomplete="off" placeholder="answer" oninput="cpCheck(this.value)">
+            <span id="cpSt" style="font-size:1.4rem;">❓</span>
+        </div>
+        <div style="color:#aaa;font-size:0.72rem;text-align:center;margin-top:8px;">Jaise <span style="color:#f1c40f;font-weight:bold;">4+3=?</span> → <span style="color:#2ecc71;font-weight:bold;">7*@f</span></div>
+    </div>
+    <div id="errMsg" style="color:#e50914;font-size:0.82rem;margin-bottom:10px;min-height:20px;"></div>
+    <button class="btn-main" id="loginBtn" onclick="loginUser()">Start Watching</button>
+</div>
+<script>
+const BACKEND_URL = window.location.origin;
+var _cpA=0,_cpB=0,_cpOp='+';
+window._cpPassed=false;
+var CP_SECRET='';
+function cpInit(){
+    fetch(BACKEND_URL+'/api/cp-secret').then(r=>r.json()).then(d=>{CP_SECRET=d.s||'*@f';cpDo();}).catch(()=>{CP_SECRET='*@f';cpDo();});
+}
+function cpDo(){
+    _cpA=Math.floor(Math.random()*8)+2;_cpB=Math.floor(Math.random()*8)+2;
+    _cpOp=Math.random()>0.5?'+':'-';
+    if(_cpOp==='-'&&_cpA<=_cpB){var t=_cpA;_cpA=_cpB;_cpB=t;}
+    window._cpPassed=false;
+    document.getElementById('cpQ').textContent=_cpA+' '+_cpOp+' '+_cpB+' = ?';
+    document.getElementById('cpAns').value='';
+    document.getElementById('cpAns').style.borderColor='#444';
+    document.getElementById('cpSt').textContent='❓';
+}
+function cpCheck(val){
+    if(!val)return;
+    var res=(_cpOp==='+')?(_cpA+_cpB):(_cpA-_cpB);
+    var correct=res+CP_SECRET;
+    var iEl=document.getElementById('cpAns'),sEl=document.getElementById('cpSt');
+    if(val.trim()===correct){window._cpPassed=true;sEl.textContent='✅';iEl.style.borderColor='#2ecc71';}
+    else{window._cpPassed=false;sEl.textContent=val.length>=correct.length?'❌':'❓';iEl.style.borderColor=val.length>=correct.length?'#e50914':'#444';}
+}
+async function loginUser(){
+    var email=document.getElementById('emailInput').value.trim().toLowerCase().replace(/\s+/g,'');
+    var pass=document.getElementById('passInput').value.trim();
+    var err=document.getElementById('errMsg'),btn=document.getElementById('loginBtn');
+    if(!email.includes('@')){err.textContent='❌ Sahi Gmail dalo!';return;}
+    if(!pass){err.textContent='❌ Password dalo!';return;}
+    if(!window._cpPassed){err.textContent='❌ Bot check galat hai!';cpDo();return;}
+    btn.textContent='Connecting...';btn.disabled=true;err.textContent='';
+    try{
+        var res=await fetch(BACKEND_URL+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+        var data=await res.json();
+        if(data.success){
+            localStorage.setItem('astratoonix_user',data.user.email);
+            localStorage.setItem('saved_email',email);
+            localStorage.setItem('saved_password',pass);
+            window.location.href='/home';
+        }else{err.textContent='❌ '+(data.message||'Ghalat details!');cpDo();}
+    }catch(e){err.textContent='❌ Server error!';}
+    finally{btn.textContent='Start Watching';btn.disabled=false;}
+}
+window.onload=function(){
+    cpInit();
+    var se=localStorage.getItem('saved_email'),sp=localStorage.getItem('saved_password');
+    if(se&&sp){
+        fetch(BACKEND_URL+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:se,password:sp})})
+        .then(r=>r.json()).then(d=>{if(d.success)window.location.href='/home';else{localStorage.removeItem('saved_email');localStorage.removeItem('saved_password');}})
+        .catch(()=>{});
+    }
+};
+</script>
+</body>
+</html>
